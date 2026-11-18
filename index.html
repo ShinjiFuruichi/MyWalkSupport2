@@ -155,6 +155,16 @@
 
       <label for="arrivalReport">到着報告</label>
       <textarea id="arrivalReport" readonly></textarea>
+      <div class="arrival-photo">
+        <label for="arrivalPhotoInput">写真（任意）</label>
+        <input id="arrivalPhotoInput" type="file" accept="image/*">
+
+        <img id="arrivalPhotoPreview" class="hidden"
+             alt="到着報告に添える写真">
+
+        <button id="removeArrivalPhotoBtn" class="hidden"
+                type="button">写真を取り消す</button>
+      </div>
 
       <button id="closeArrivalBtn" type="button">閉じる</button>
     </div>

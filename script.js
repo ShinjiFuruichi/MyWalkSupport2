@@ -2189,6 +2189,8 @@ function resetAllState() {
 
 // CP・エイド到着報告
 let arrivalDraft = null;
+let arrivalPhotoFile = null;
+let arrivalPhotoUrl = null;
 
 document.getElementById("arrivalBtn").onclick = async () => {
   if (!startTime || isFinished || latlngs.length === 0) return;
@@ -2284,6 +2286,7 @@ document.getElementById("arrivalSelect").onchange = renderArrivalReport;
 
 document.getElementById("closeArrivalBtn").onclick = () => {
   document.getElementById("arrivalPanel").classList.add("hidden");
+  resetArrivalPhoto();
   arrivalDraft = null;
 };
 
@@ -2331,4 +2334,66 @@ function renderArrivalReport() {
     `CP位置：${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`,
     `地図：${mapUrl}`
   ].join("\n");
+}
+
+// 到着報告の写真選択
+document.getElementById("arrivalPhotoInput").onchange = (event) => {
+  const file = event.target.files[0];
+
+  // 選択をキャンセルした場合は、現在の写真を維持する
+  if (!file) return;
+
+  if (file.type && !file.type.startsWith("image/")) {
+    event.target.value = "";
+    alert("写真を選択してください。");
+    return;
+  }
+
+  // 前の写真を片付けてから、新しい写真を表示する
+  resetArrivalPhoto();
+
+  arrivalPhotoFile = file;
+  arrivalPhotoUrl = URL.createObjectURL(file);
+
+  const preview = document.getElementById("arrivalPhotoPreview");
+  const selectedUrl = arrivalPhotoUrl;
+
+  preview.onerror = () => {
+    // 写真を選び直した後の古いエラーは無視する
+    if (arrivalPhotoUrl !== selectedUrl) return;
+
+    resetArrivalPhoto();
+    alert(
+      "この写真を表示できませんでした。" +
+      "別の写真か、JPEG・PNG形式の画像を選んでください。"
+    );
+  };
+
+  preview.src = selectedUrl;
+  preview.classList.remove("hidden");
+  document.getElementById("removeArrivalPhotoBtn")
+    .classList.remove("hidden");
+};
+
+// 写真だけ取り消す
+document.getElementById("removeArrivalPhotoBtn").onclick =
+  resetArrivalPhoto;
+
+function resetArrivalPhoto() {
+  const preview = document.getElementById("arrivalPhotoPreview");
+
+  preview.onerror = null;
+  preview.classList.add("hidden");
+  preview.removeAttribute("src");
+
+  if (arrivalPhotoUrl) {
+    URL.revokeObjectURL(arrivalPhotoUrl);
+  }
+
+  arrivalPhotoFile = null;
+  arrivalPhotoUrl = null;
+
+  document.getElementById("arrivalPhotoInput").value = "";
+  document.getElementById("removeArrivalPhotoBtn")
+    .classList.add("hidden");
 }
