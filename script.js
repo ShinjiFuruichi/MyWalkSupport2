@@ -2199,11 +2199,6 @@ document.getElementById("arrivalBtn").onclick = async () => {
     REST_TYPES.includes(wp.type)
   );
 
-  if (checkpoints.length === 0) {
-    alert("GPXにCP・休憩所の情報がありません。");
-    return;
-  }
-
   // GPS取得や写真選択にかかる時間を到着時刻に含めない
   const pressedAt = new Date();
   const startedAt = new Date(startTime);
@@ -2248,6 +2243,22 @@ document.getElementById("arrivalBtn").onclick = async () => {
       courseDistance: getTraveledDistance(wp.routeIndex, latlngs)
     })).sort((a, b) => a.distanceFromHere - b.distanceFromHere);
 
+    // GPSの実際の座標と、コース上の最寄り地点
+    const nearest = findNearestIndex(current, latlngs);
+
+    candidates.push({
+      isCurrentLocation: true,
+      point: {
+        name: "現在地（GPS）",
+        lat: current[0],
+        lon: current[1],
+        routeIndex: nearest.index
+      },
+      distanceFromHere: 0,
+      distanceFromCourse: nearest.distance,
+      courseDistance: getTraveledDistance(nearest.index, latlngs)
+    });
+
     arrivalDraft = {
       pressedAt,
       startedAt,
@@ -2261,10 +2272,10 @@ document.getElementById("arrivalBtn").onclick = async () => {
     candidates.forEach((candidate, index) => {
       const option = document.createElement("option");
       option.value = String(index);
-      option.textContent =
-        `${candidate.point.name}` +
-        `（現在地から約${Math.round(candidate.distanceFromHere)}m）`;
-
+      option.textContent = candidate.isCurrentLocation
+        ? "現在地（GPS）を報告"
+        : `${candidate.point.name}` +
+          `（現在地から約${Math.round(candidate.distanceFromHere)}m）`;
       select.appendChild(option);
     });
 
@@ -2301,6 +2312,7 @@ function renderArrivalReport() {
 
   const { point, courseDistance, distanceFromHere } = candidate;
   const { pressedAt, startedAt, accuracy } = arrivalDraft;
+  const isCurrentLocation = candidate.isCurrentLocation === true;
 
   const distanceKm = courseDistance / 1000;
   const elapsedMs = Math.max(0, pressedAt - startedAt);
@@ -2318,25 +2330,44 @@ function renderArrivalReport() {
   const mapUrl =
     `https://www.google.com/maps/search/?api=1` +
     `&query=${point.lat},${point.lon}`;
+
   document.getElementById("arrivalMapLink").href = mapUrl;
 
   const courseName = document.getElementById("courseName").textContent;
 
   document.getElementById("arrivalLocationInfo").textContent =
-    `選択地点まで約${Math.round(distanceFromHere)}m` +
-    `／GPS精度の目安：約${Math.round(accuracy)}m。` +
-    "到着した地点か確認してください。";
+    isCurrentLocation
+      ? `GPSで取得した現在地です。精度の目安：約${Math.round(accuracy)}m。` +
+        `コース上の最寄り地点まで約${Math.round(candidate.distanceFromCourse)}m。` +
+        "距離・ペースはコース上の位置からの推定です。"
+      : `選択地点まで約${Math.round(distanceFromHere)}m` +
+        `／GPS精度の目安：約${Math.round(accuracy)}m。` +
+        "到着した地点か確認してください。";
 
-  document.getElementById("arrivalReport").value = [
-    `${point.name}に到着！`,
+  const report = [
+    isCurrentLocation ? "現在地を報告します！" : `${point.name}に到着！`,
     `コース：${courseName}`,
-    `距離：${distanceKm.toFixed(1)}km地点`,
-    `到着：${pressedAt.toLocaleDateString("ja-JP")} ${formatClock(pressedAt)}`,
+    isCurrentLocation
+      ? `コース上の推定距離：${distanceKm.toFixed(1)}km地点`
+      : `距離：${distanceKm.toFixed(1)}km地点`,
+    `${isCurrentLocation ? "報告" : "到着"}：` +
+      `${pressedAt.toLocaleDateString("ja-JP")} ${formatClock(pressedAt)}`,
     `経過：${formatDuration(elapsedMs)}`,
-    `平均ペース：${paceText}（休憩込み）`,
-    `CP位置：${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`,
+    `${isCurrentLocation ? "推定平均ペース" : "平均ペース"}：` +
+      `${paceText}（休憩込み）`,
+    `${isCurrentLocation ? "現在地" : "CP位置"}：` +
+      `${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`,
     `地図：${mapUrl}`
-  ].join("\n");
+  ];
+
+  if (isCurrentLocation) {
+    report.push(
+      "※距離・ペースはコース上の最寄り地点からの推定です。",
+      `※GPS精度の目安：約${Math.round(accuracy)}m。`
+    );
+  }
+
+  document.getElementById("arrivalReport").value = report.join("\n");
 }
 
 // 到着報告の写真選択
@@ -2509,6 +2540,10 @@ document.getElementById("createArrivalImageBtn").onclick = async () => {
     };
 
     const { point, courseDistance } = candidate;
+    const isCurrentLocation = candidate.isCurrentLocation === true;
+    const reportTitle = isCurrentLocation
+      ? "現在地を報告します！"
+      : `${point.name}に到着！`;    
     const distanceKm = courseDistance / 1000;
     const elapsedMs = Math.max(0, draft.pressedAt - draft.startedAt);
 
@@ -2526,10 +2561,14 @@ document.getElementById("createArrivalImageBtn").onclick = async () => {
     if (photoUrl) {
       // 写真あり：写真の下に到着情報
       drawText("MyWalkSupport", 130, 52);
-      drawText(`${point.name}に到着！`, 1130, 64);
+      drawText(reportTitle, 1130, 64);
       drawText(courseName, 1220, 38);
-      drawText(`${distanceKm.toFixed(1)}km地点`, 1340, 60);
-
+      drawText(
+        `${isCurrentLocation ? "コース上の推定 " : ""}` +
+        `${distanceKm.toFixed(1)}km地点`,
+        1340,
+        60
+      );
       detailsY = 1440;
     } else {
       // 写真なし：CP名と到達距離が主役のカード
@@ -2543,10 +2582,20 @@ document.getElementById("createArrivalImageBtn").onclick = async () => {
       ctx.fillRect(60, 300, 100, 10);
 
       drawText("MyWalkSupport", 220, 48);
-      drawText("チェックポイント到着", 430, 44, "#536558");
+      drawText(
+        isCurrentLocation ? "現在地を報告" : "チェックポイント到着",
+        430,
+        44,
+        "#536558"
+      );
       drawText(point.name, 600, 88);
 
-      drawText("ここまで歩いた距離", 780, 38, "#536558");
+      drawText(
+        isCurrentLocation ? "コース上の推定距離" : "ここまで歩いた距離",
+        780,
+        38,
+        "#536558"
+      );
       drawText(`${distanceKm.toFixed(1)} km`, 930, 128);
 
       ctx.strokeStyle = "#c5d6c9";
@@ -2562,7 +2611,8 @@ document.getElementById("createArrivalImageBtn").onclick = async () => {
     }
 
     drawText(
-      `到着：${draft.pressedAt.toLocaleDateString("ja-JP")} ` +
+      `${isCurrentLocation ? "報告" : "到着"}：` +
+      `${draft.pressedAt.toLocaleDateString("ja-JP")} ` +
       formatClock(draft.pressedAt),
       detailsY,
       42
@@ -2575,13 +2625,15 @@ document.getElementById("createArrivalImageBtn").onclick = async () => {
     );
 
     drawText(
-      `平均ペース：${pace}`,
+      `${isCurrentLocation ? "推定平均ペース" : "平均ペース"}：${pace}`,
       detailsY + 200,
       44
     );
 
     drawText(
-      "休憩時間を含む平均ペース",
+      isCurrentLocation
+        ? "休憩込み・コース上の位置から推定"
+        : "休憩時間を含む平均ペース",
       detailsY + 260,
       30,
       "#536558"
