@@ -2099,7 +2099,7 @@ function updateUIState(state) {
     "startBtn", "updateBtn", "endBtn",
     "tagBtn", "saveBtn", "quickBtn",
     "listBtn", "configBtn", "cpListBtn",
-    "elevationBtn"
+    "elevationBtn", "arrivalBtn"
   ];
 
   const visibleIdsByState = {
@@ -2112,7 +2112,8 @@ function updateUIState(state) {
     ],
     started: [
       "updateBtn", "endBtn", "tagBtn", "saveBtn",
-      "quickBtn", "listBtn", "cpListBtn", "elevationBtn"
+      "quickBtn", "listBtn", "cpListBtn", "elevationBtn",
+      "arrivalBtn"
     ],
     finished: [
       "saveBtn"
@@ -2184,4 +2185,150 @@ function resetAllState() {
     panel.classList.add("hidden");
     panel.innerHTML = "";
   });
+}
+
+// CP・エイド到着報告
+let arrivalDraft = null;
+
+document.getElementById("arrivalBtn").onclick = async () => {
+  if (!startTime || isFinished || latlngs.length === 0) return;
+
+  const checkpoints = waypoints.filter(wp =>
+    REST_TYPES.includes(wp.type)
+  );
+
+  if (checkpoints.length === 0) {
+    alert("GPXにCP・休憩所の情報がありません。");
+    return;
+  }
+
+  // GPS取得や写真選択にかかる時間を到着時刻に含めない
+  const pressedAt = new Date();
+  const startedAt = new Date(startTime);
+  const button = document.getElementById("arrivalBtn");
+
+  button.disabled = true;
+  showStatus("📍 到着地点を確認中...");
+
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    // 取得中に終了・リセットされた場合は報告を作らない
+    if (
+      !startTime ||
+      isFinished ||
+      startTime.getTime() !== startedAt.getTime()
+    ) {
+      return;
+    }
+
+    const current = [
+      position.coords.latitude,
+      position.coords.longitude
+    ];
+
+    const candidates = checkpoints.map(wp => ({
+      point: wp,
+      distanceFromHere: getDistanceMeters(
+        current,
+        [wp.lat, wp.lon]
+      ),
+      courseDistance: getTraveledDistance(wp.routeIndex, latlngs)
+    })).sort((a, b) => a.distanceFromHere - b.distanceFromHere);
+
+    arrivalDraft = {
+      pressedAt,
+      startedAt,
+      accuracy: position.coords.accuracy,
+      candidates
+    };
+
+    const select = document.getElementById("arrivalSelect");
+    select.replaceChildren();
+
+    candidates.forEach((candidate, index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent =
+        `${candidate.point.name}` +
+        `（現在地から約${Math.round(candidate.distanceFromHere)}m）`;
+
+      select.appendChild(option);
+    });
+
+    renderArrivalReport();
+    document.getElementById("arrivalPanel").classList.remove("hidden");
+    showStatus("到着地点を確認してください");
+  } catch (error) {
+    console.warn("到着地点の取得失敗:", error);
+    alert(
+      "現在地を取得できませんでした。" +
+      "位置情報の許可や通信状況を確認して、もう一度押してください。"
+    );
+  } finally {
+    button.disabled = false;
+  }
+};
+
+document.getElementById("arrivalSelect").onchange = renderArrivalReport;
+
+document.getElementById("closeArrivalBtn").onclick = () => {
+  document.getElementById("arrivalPanel").classList.add("hidden");
+  arrivalDraft = null;
+};
+
+function renderArrivalReport() {
+  if (!arrivalDraft) return;
+
+  const index = Number(document.getElementById("arrivalSelect").value);
+  const candidate = arrivalDraft.candidates[index];
+  if (!candidate) return;
+
+  const { point, courseDistance, distanceFromHere } = candidate;
+  const { pressedAt, startedAt, accuracy } = arrivalDraft;
+
+  const distanceKm = courseDistance / 1000;
+  const elapsedMs = Math.max(0, pressedAt - startedAt);
+
+  let paceText = "--";
+
+  if (distanceKm > 0) {
+    const paceSeconds = Math.round(elapsedMs / 1000 / distanceKm);
+    const minutes = Math.floor(paceSeconds / 60);
+    const seconds = String(paceSeconds % 60).padStart(2, "0");
+
+    paceText = `${minutes}分${seconds}秒/km`;
+  }
+
+  const mapUrl =
+    `https://www.google.com/maps/search/?api=1` +
+    `&query=${point.lat},${point.lon}`;
+
+  const courseName = document.getElementById("courseName").textContent;
+
+  document.getElementById("arrivalLocationInfo").textContent =
+    `選択地点まで約${Math.round(distanceFromHere)}m` +
+    `／GPS精度の目安：約${Math.round(accuracy)}m。` +
+    "到着した地点か確認してください。";
+
+  document.getElementById("arrivalReport").value = [
+    `${point.name}に到着！`,
+    `コース：${courseName}`,
+    `距離：${distanceKm.toFixed(1)}km地点`,
+    `到着：${pressedAt.toLocaleDateString("ja-JP")} ${formatClock(pressedAt)}`,
+    `経過：${formatDuration(elapsedMs)}`,
+    `平均ペース：${paceText}（休憩込み）`,
+    `CP位置：${point.lat.toFixed(6)}, ${point.lon.toFixed(6)}`,
+    `地図：${mapUrl}`
+  ].join("\n");
 }

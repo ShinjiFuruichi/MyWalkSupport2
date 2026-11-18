@@ -414,3 +414,62 @@ button:active {
   width: 100%;
   height: 100%;
 }
+
+/* CP・エイド到着 */
+#arrivalBtn {
+  font-size: 14px;
+}
+
+#arrivalPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+}
+
+.arrival-box {
+  box-sizing: border-box;
+  width: calc(100% - 24px);
+  max-width: 420px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  margin: 5vh auto;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  font-family: sans-serif;
+}
+
+.arrival-box h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.arrival-box label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.arrival-box select,
+.arrival-box textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 16px;
+  padding: 8px;
+}
+
+.arrival-box textarea {
+  height: 240px;
+  resize: vertical;
+}
+
+#arrivalLocationInfo {
+  font-size: 14px;
+}
+
+#closeArrivalBtn {
+  width: 100%;
+  margin-top: 12px;
+  font-size: 16px;
+}
