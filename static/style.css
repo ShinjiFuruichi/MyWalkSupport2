@@ -500,3 +500,59 @@ button:active {
   font-size: 16px;
   background: #666;
 }
+
+#createArrivalImageBtn {
+  width: 100%;
+  height: auto;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 16px;
+}
+
+#createArrivalImageBtn:disabled {
+  opacity: 0.5;
+}
+
+#arrivalSharePreview {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 12px;
+  border-radius: 8px;
+}
+
+#arrivalSharePreview.hidden {
+  display: none;
+}
+
+#arrivalImageStatus {
+  font-size: 14px;
+}
+
+#arrivalMapLink {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #e6f0e8;
+  color: #245333;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#shareArrivalImageBtn,
+#shareArrivalTextBtn {
+  width: 100%;
+  height: auto;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+#shareArrivalTextBtn {
+  background: #30643d;
+}
+
+#arrivalShareStatus {
+  font-size: 14px;
+}

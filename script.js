@@ -2291,6 +2291,8 @@ document.getElementById("closeArrivalBtn").onclick = () => {
 };
 
 function renderArrivalReport() {
+  resetArrivalShareImage();
+
   if (!arrivalDraft) return;
 
   const index = Number(document.getElementById("arrivalSelect").value);
@@ -2316,6 +2318,7 @@ function renderArrivalReport() {
   const mapUrl =
     `https://www.google.com/maps/search/?api=1` +
     `&query=${point.lat},${point.lon}`;
+  document.getElementById("arrivalMapLink").href = mapUrl;
 
   const courseName = document.getElementById("courseName").textContent;
 
@@ -2380,6 +2383,8 @@ document.getElementById("removeArrivalPhotoBtn").onclick =
   resetArrivalPhoto;
 
 function resetArrivalPhoto() {
+  resetArrivalShareImage();
+
   const preview = document.getElementById("arrivalPhotoPreview");
 
   preview.onerror = null;
@@ -2396,4 +2401,305 @@ function resetArrivalPhoto() {
   document.getElementById("arrivalPhotoInput").value = "";
   document.getElementById("removeArrivalPhotoBtn")
     .classList.add("hidden");
+}
+
+// 共有用画像
+let arrivalShareImageData = null;
+let arrivalImageVersion = 0;
+
+function resetArrivalShareImage() {
+  arrivalImageVersion += 1;
+  arrivalShareImageData = null;
+
+  const preview = document.getElementById("arrivalSharePreview");
+  preview.classList.add("hidden");
+  preview.removeAttribute("src");
+
+  document.getElementById("arrivalImageStatus").textContent = "";
+  document.getElementById("arrivalShareStatus").textContent = "";
+}
+
+document.getElementById("createArrivalImageBtn").onclick = async () => {
+  if (!arrivalDraft) return;
+
+  const index = Number(document.getElementById("arrivalSelect").value);
+  const candidate = arrivalDraft.candidates[index];
+  if (!candidate) return;
+
+  resetArrivalShareImage();
+
+  const version = arrivalImageVersion;
+  const draft = arrivalDraft;
+  const photoUrl = arrivalPhotoUrl;
+  const courseName = document.getElementById("courseName").textContent;
+  const button = document.getElementById("createArrivalImageBtn");
+  const status = document.getElementById("arrivalImageStatus");
+
+  button.disabled = true;
+  status.textContent = "画像を作成中...";
+
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("画像作成機能を利用できません。");
+
+    // 背景
+    ctx.fillStyle = "#f5f7f4";
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // 写真：縦横比を保ち、枠の中に全体を収める
+    const photoArea = { x: 60, y: 200, width: 960, height: 820 };
+
+    if (photoUrl) {
+      ctx.fillStyle = "#dce8dd";
+      ctx.fillRect(
+        photoArea.x, photoArea.y,
+        photoArea.width, photoArea.height
+      );
+      const image = new Image();
+      image.src = photoUrl;
+      await image.decode();
+
+      if (version !== arrivalImageVersion) return;
+
+      const scale = Math.min(
+        photoArea.width / image.naturalWidth,
+        photoArea.height / image.naturalHeight
+      );
+
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+
+      ctx.drawImage(
+        image,
+        photoArea.x + (photoArea.width - width) / 2,
+        photoArea.y + (photoArea.height - height) / 2,
+        width,
+        height
+      );
+    }
+
+    // 長い名前は文字を小さくし、収まらない場合だけ末尾を省略
+    const drawText = (text, y, size, color = "#183c25") => {
+      let label = String(text);
+      let fontSize = size;
+
+      ctx.fillStyle = color;
+      ctx.font = `bold ${fontSize}px sans-serif`;
+
+      while (ctx.measureText(label).width > 960 && fontSize > 28) {
+        fontSize -= 2;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+      }
+
+      if (ctx.measureText(label).width > 960) {
+        while (
+          label.length > 0 &&
+          ctx.measureText(label + "…").width > 960
+        ) {
+          label = label.slice(0, -1);
+        }
+        label += "…";
+      }
+
+      ctx.fillText(label, 60, y);
+    };
+
+    const { point, courseDistance } = candidate;
+    const distanceKm = courseDistance / 1000;
+    const elapsedMs = Math.max(0, draft.pressedAt - draft.startedAt);
+
+    let pace = "--";
+
+    if (distanceKm > 0) {
+      const paceSeconds = Math.round(elapsedMs / 1000 / distanceKm);
+      const min = Math.floor(paceSeconds / 60);
+      const sec = String(paceSeconds % 60).padStart(2, "0");
+      pace = `${min}分${sec}秒/km`;
+    }
+
+    let detailsY;
+
+    if (photoUrl) {
+      // 写真あり：写真の下に到着情報
+      drawText("MyWalkSupport", 130, 52);
+      drawText(`${point.name}に到着！`, 1130, 64);
+      drawText(courseName, 1220, 38);
+      drawText(`${distanceKm.toFixed(1)}km地点`, 1340, 60);
+
+      detailsY = 1440;
+    } else {
+      // 写真なし：CP名と到達距離が主役のカード
+      const gradient = ctx.createLinearGradient(0, 0, 0, 1920);
+      gradient.addColorStop(0, "#e6f0e8");
+      gradient.addColorStop(1, "#f8faf6");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      ctx.fillStyle = "#30643d";
+      ctx.fillRect(60, 300, 100, 10);
+
+      drawText("MyWalkSupport", 220, 48);
+      drawText("チェックポイント到着", 430, 44, "#536558");
+      drawText(point.name, 600, 88);
+
+      drawText("ここまで歩いた距離", 780, 38, "#536558");
+      drawText(`${distanceKm.toFixed(1)} km`, 930, 128);
+
+      ctx.strokeStyle = "#c5d6c9";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(60, 1040);
+      ctx.lineTo(1020, 1040);
+      ctx.stroke();
+
+      drawText(courseName, 1140, 42);
+
+      detailsY = 1290;
+    }
+
+    drawText(
+      `到着：${draft.pressedAt.toLocaleDateString("ja-JP")} ` +
+      formatClock(draft.pressedAt),
+      detailsY,
+      42
+    );
+
+    drawText(
+      `経過：${formatDuration(elapsedMs)}`,
+      detailsY + 100,
+      46
+    );
+
+    drawText(
+      `平均ペース：${pace}`,
+      detailsY + 200,
+      44
+    );
+
+    drawText(
+      "休憩時間を含む平均ペース",
+      detailsY + 260,
+      30,
+      "#536558"
+    );
+
+    // 作成中にCP・写真・報告が変更されたら結果を表示しない
+    if (version !== arrivalImageVersion) return;
+
+    arrivalShareImageData = canvas.toDataURL("image/jpeg", 0.9);
+
+    const preview = document.getElementById("arrivalSharePreview");
+    preview.src = arrivalShareImageData;
+    preview.classList.remove("hidden");
+
+    status.textContent =
+      "共有用画像を作成しました。内容を確認してください。";
+  } catch (error) {
+    if (version === arrivalImageVersion) {
+      console.warn("共有用画像の作成失敗:", error);
+      status.textContent =
+        "画像を作成できませんでした。写真を選び直してお試しください。";
+    }
+  } finally {
+    button.disabled = false;
+  }
+};
+
+// 到着報告の共有
+let arrivalShareBusy = false;
+
+document.getElementById("shareArrivalImageBtn").onclick = () => {
+  if (!arrivalShareImageData) {
+    alert("先に「共有用画像を作る」を押してください。");
+    return;
+  }
+
+  try {
+    // 作成済みJPEGを共有できるファイルに変換
+    const base64 = arrivalShareImageData.split(",")[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    const file = new File(
+      [bytes],
+      "checkpoint-arrival.jpg",
+      { type: "image/jpeg" }
+    );
+
+    if (
+      !navigator.share ||
+      !navigator.canShare ||
+      !navigator.canShare({ files: [file] })
+    ) {
+      alert(
+        "この環境では画像を直接共有できません。" +
+        "下の共有用画像を長押しして保存し、投稿先で選択してください。"
+      );
+      return;
+    }
+
+    shareArrivalContent({ files: [file] });
+  } catch (error) {
+    console.warn("共有画像の準備失敗:", error);
+    alert("画像を準備できませんでした。画像を作り直してください。");
+  }
+};
+
+document.getElementById("shareArrivalTextBtn").onclick = () => {
+  if (!arrivalDraft) return;
+
+  if (!navigator.share) {
+    alert(
+      "この環境では共有画面を開けません。" +
+      "到着報告欄の文章を選択してコピーしてください。"
+    );
+    return;
+  }
+
+  const text = document.getElementById("arrivalReport").value;
+
+  shareArrivalContent({ text });
+};
+
+async function shareArrivalContent(data) {
+  if (arrivalShareBusy) return;
+
+  arrivalShareBusy = true;
+
+  const imageButton = document.getElementById("shareArrivalImageBtn");
+  const textButton = document.getElementById("shareArrivalTextBtn");
+  const status = document.getElementById("arrivalShareStatus");
+
+  imageButton.disabled = true;
+  textButton.disabled = true;
+  status.textContent = "";
+
+  try {
+    await navigator.share(data);
+
+    // アプリ側から実際の投稿完了までは確認できない
+    status.textContent =
+      "共有操作を終了しました。送信・投稿結果は共有先で確認してください。";
+  } catch (error) {
+    if (error.name === "AbortError") {
+      status.textContent =
+        "共有をキャンセルしたか、共有先を利用できませんでした。";
+    } else {
+      console.warn("到着報告の共有失敗:", error);
+      status.textContent =
+        "共有画面を開けませんでした。Safariでもう一度お試しください。";
+    }
+  } finally {
+    arrivalShareBusy = false;
+    imageButton.disabled = false;
+    textButton.disabled = false;
+  }
 }

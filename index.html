@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <!-- CSS -->
-  <link rel="stylesheet" href="static/style.css?v=20261118-2">
+  <link rel="stylesheet" href="static/style.css?v=20261118-5">
 </head>
 
 <body>
@@ -155,6 +155,13 @@
 
       <label for="arrivalReport">到着報告</label>
       <textarea id="arrivalReport" readonly></textarea>
+
+      <p>
+        <a id="arrivalMapLink" target="_blank" rel="noopener noreferrer">
+          地図で見る ↗
+        </a>
+      </p>
+
       <div class="arrival-photo">
         <label for="arrivalPhotoInput">写真（任意）</label>
         <input id="arrivalPhotoInput" type="file" accept="image/*">
@@ -165,6 +172,23 @@
         <button id="removeArrivalPhotoBtn" class="hidden"
                 type="button">写真を取り消す</button>
       </div>
+      <button id="createArrivalImageBtn" type="button">
+        共有用画像を作る
+      </button>
+
+      <img id="arrivalSharePreview" class="hidden"
+           alt="到着報告の共有用画像">
+
+      <p id="arrivalImageStatus" aria-live="polite"></p>
+      <button id="shareArrivalImageBtn" type="button">
+        画像を共有
+      </button>
+
+      <button id="shareArrivalTextBtn" type="button">
+        報告文・地図を共有
+      </button>
+
+      <p id="arrivalShareStatus" aria-live="polite"></p>
 
       <button id="closeArrivalBtn" type="button">閉じる</button>
     </div>
@@ -174,6 +198,6 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- JS -->
-  <script src="script.js?v=20261118-2"></script>
+  <script src="script.js?v=20261118-5"></script>
 </body>
 </html>
