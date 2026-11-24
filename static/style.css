@@ -605,3 +605,17 @@ button:active {
   padding: 16px 18px;
   font-size: 18px;
 }
+
+#copyArrivalMapBtn {
+  width: 100%;
+  height: auto;
+  padding: 14px;
+  background: #30643d;
+}
+
+#arrivalCopyStatus {
+  margin: 8px 0 16px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #245333;
+}

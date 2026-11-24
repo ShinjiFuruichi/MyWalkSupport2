@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <!-- CSS -->
-  <link rel="stylesheet" href="static/style.css?v=20261124-1">
+  <link rel="stylesheet" href="static/style.css?v=20261124-2">
 </head>
 
 <body>
@@ -162,6 +162,12 @@
         </a>
       </p>
 
+      <button id="copyArrivalMapBtn" type="button">
+        地図リンクをコピー
+      </button>
+
+      <p id="arrivalCopyStatus" aria-live="polite"></p>
+
       <div class="arrival-photo">
         <label for="arrivalPhotoInput">写真（任意）</label>
         <input id="arrivalPhotoInput" type="file" accept="image/*">
@@ -198,6 +204,6 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- JS -->
-  <script src="script.js?v=20261124-1"></script>
+  <script src="script.js?v=20261124-2"></script>
 </body>
 </html>

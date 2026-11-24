@@ -2303,6 +2303,7 @@ document.getElementById("closeArrivalBtn").onclick = () => {
 
 function renderArrivalReport() {
   resetArrivalShareImage();
+  document.getElementById("arrivalCopyStatus").textContent = "";
 
   if (!arrivalDraft) return;
 
@@ -2755,3 +2756,43 @@ async function shareArrivalContent(data) {
     textButton.disabled = false;
   }
 }
+
+// 選択中のCP・現在地の地図リンクをコピー
+document.getElementById("copyArrivalMapBtn").onclick = async () => {
+  if (!arrivalDraft) return;
+
+  const link = document.getElementById("arrivalMapLink");
+  const url = link.getAttribute("href");
+  const status = document.getElementById("arrivalCopyStatus");
+
+  if (!url) return;
+
+  status.textContent = "";
+
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("コピー機能を利用できません。");
+    }
+
+    await navigator.clipboard.writeText(url);
+
+    // コピー中に選択地点が変わった場合は再操作を案内
+    if (
+      !arrivalDraft ||
+      link.getAttribute("href") !== url
+    ) {
+      status.textContent =
+        "報告する場所が変わったため、もう一度コピーしてください。";
+      return;
+    }
+
+    status.textContent =
+      "地図リンクをコピーしました。" +
+      "画像を共有した後、SNSの「リンク」スタンプに貼り付けてください。";
+  } catch (error) {
+    console.warn("地図リンクのコピー失敗:", error);
+    status.textContent =
+      "コピーできませんでした。" +
+      "「地図で見る」を長押しして、リンクをコピーしてください。";
+  }
+};
