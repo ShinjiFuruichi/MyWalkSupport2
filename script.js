@@ -2304,6 +2304,7 @@ document.getElementById("closeArrivalBtn").onclick = () => {
 function renderArrivalReport() {
   resetArrivalShareImage();
   document.getElementById("arrivalCopyStatus").textContent = "";
+  document.getElementById("arrivalAppStatus").textContent = "";
 
   if (!arrivalDraft) return;
 
@@ -2699,7 +2700,7 @@ document.getElementById("shareArrivalImageBtn").onclick = () => {
       return;
     }
 
-    shareArrivalContent({ files: [file] });
+    shareArrivalContent({ files: [file] }, true);
   } catch (error) {
     console.warn("共有画像の準備失敗:", error);
     alert("画像を準備できませんでした。画像を作り直してください。");
@@ -2722,7 +2723,7 @@ document.getElementById("shareArrivalTextBtn").onclick = () => {
   shareArrivalContent({ text });
 };
 
-async function shareArrivalContent(data) {
+async function shareArrivalContent(data, forImageSave = false) {
   if (arrivalShareBusy) return;
 
   arrivalShareBusy = true;
@@ -2739,8 +2740,9 @@ async function shareArrivalContent(data) {
     await navigator.share(data);
 
     // アプリ側から実際の投稿完了までは確認できない
-    status.textContent =
-      "共有操作を終了しました。送信・投稿結果は共有先で確認してください。";
+    status.textContent = forImageSave
+      ? "写真への保存を確認したら、投稿先のボタンを押してください。"
+      : "共有操作を終了しました。送信結果は共有先で確認してください。";
   } catch (error) {
     if (error.name === "AbortError") {
       status.textContent =
@@ -2796,3 +2798,88 @@ document.getElementById("copyArrivalMapBtn").onclick = async () => {
       "「地図で見る」を長押しして、リンクをコピーしてください。";
   }
 };
+
+// 地図URLをコピーして投稿先アプリを開く
+let arrivalAppOpening = false;
+
+const arrivalAppTargets = {
+  facebook: {
+    name: "Facebook",
+    appUrl: "fb://",
+    webUrl: "https://www.facebook.com/"
+  },
+  instagram: {
+    name: "Instagram",
+    appUrl: "instagram://app",
+    webUrl: "https://www.instagram.com/"
+  },
+  line: {
+    name: "LINE",
+    appUrl: "https://line.me/R/nv/chat",
+    webUrl: "https://line.me/R/nv/chat"
+  }
+};
+
+document.getElementById("openArrivalFacebookBtn").onclick =
+  () => openArrivalApp("facebook");
+
+document.getElementById("openArrivalInstagramBtn").onclick =
+  () => openArrivalApp("instagram");
+
+document.getElementById("openArrivalLineBtn").onclick =
+  () => openArrivalApp("line");
+
+async function openArrivalApp(appKey) {
+  if (arrivalAppOpening || arrivalShareBusy) return;
+  if (!arrivalDraft) return;
+
+  if (!arrivalShareImageData) {
+    alert("先に共有用画像を作り、画像を保存してください。");
+    return;
+  }
+
+  const target = arrivalAppTargets[appKey];
+  if (!target) return;
+
+  const link = document.getElementById("arrivalMapLink");
+  const url = link.getAttribute("href");
+  const status = document.getElementById("arrivalAppStatus");
+
+  if (!url) return;
+
+  arrivalAppOpening = true;
+  status.textContent = "";
+
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("コピー機能を利用できません。");
+    }
+
+    // 画像保存の後、アプリへ移る直前にコピーする
+    await navigator.clipboard.writeText(url);
+
+    if (!arrivalDraft || link.getAttribute("href") !== url) {
+      status.textContent =
+        "報告する場所が変わりました。もう一度ボタンを押してください。";
+      return;
+    }
+
+    status.textContent =
+      `地図リンクをコピーしました。${target.name}で保存画像を選び、` +
+      "必要ならリンクを貼り付けてください。" +
+      "アプリが開かない場合は、ホーム画面から開いてください。";
+
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+    window.location.href = isIOS
+      ? target.appUrl
+      : target.webUrl;
+  } catch (error) {
+    console.warn("投稿先を開く準備の失敗:", error);
+    status.textContent =
+      "地図リンクをコピーできませんでした。" +
+      "「地図リンクをコピー」からもう一度お試しください。";
+  } finally {
+    arrivalAppOpening = false;
+  }
+}

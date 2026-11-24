@@ -619,3 +619,39 @@ button:active {
   line-height: 1.5;
   color: #245333;
 }
+
+.arrival-help {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #536558;
+}
+
+.arrival-app-buttons {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.arrival-app-buttons button {
+  width: 100%;
+  height: auto;
+  padding: 14px;
+}
+
+#openArrivalFacebookBtn {
+  background: #1877f2;
+}
+
+#openArrivalInstagramBtn {
+  background: #a52d91;
+}
+
+#openArrivalLineBtn {
+  background: #087f35;
+}
+
+#arrivalAppStatus {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #245333;
+}

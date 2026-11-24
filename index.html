@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <!-- CSS -->
-  <link rel="stylesheet" href="static/style.css?v=20261124-2">
+  <link rel="stylesheet" href="static/style.css?v=20261124-3">
 </head>
 
 <body>
@@ -186,9 +186,30 @@
            alt="到着報告の共有用画像">
 
       <p id="arrivalImageStatus" aria-live="polite"></p>
+
       <button id="shareArrivalImageBtn" type="button">
-        画像を共有
+        画像を保存
       </button>
+
+      <p class="arrival-help">
+        保存画面で「画像を保存」を選び、その後、下の投稿先を押してください。
+      </p>
+
+      <div class="arrival-app-buttons">
+        <button id="openArrivalFacebookBtn" type="button">
+          Facebookを開く
+        </button>
+
+        <button id="openArrivalInstagramBtn" type="button">
+          Instagramを開く
+        </button>
+
+        <button id="openArrivalLineBtn" type="button">
+          LINEを開く
+        </button>
+      </div>
+
+      <p id="arrivalAppStatus" aria-live="polite"></p>
 
       <button id="shareArrivalTextBtn" type="button">
         報告文・地図を共有
@@ -204,6 +225,6 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- JS -->
-  <script src="script.js?v=20261124-2"></script>
+  <script src="script.js?v=20261124-3"></script>
 </body>
 </html>
