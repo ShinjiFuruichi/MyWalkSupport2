@@ -2700,62 +2700,42 @@ document.getElementById("shareArrivalImageBtn").onclick = () => {
       return;
     }
 
-    shareArrivalContent({ files: [file] }, true);
+    shareArrivalContent({ files: [file] });
   } catch (error) {
     console.warn("共有画像の準備失敗:", error);
     alert("画像を準備できませんでした。画像を作り直してください。");
   }
 };
 
-document.getElementById("shareArrivalTextBtn").onclick = () => {
-  if (!arrivalDraft) return;
-
-  if (!navigator.share) {
-    alert(
-      "この環境では共有画面を開けません。" +
-      "到着報告欄の文章を選択してコピーしてください。"
-    );
-    return;
-  }
-
-  const text = document.getElementById("arrivalReport").value;
-
-  shareArrivalContent({ text });
-};
-
-async function shareArrivalContent(data, forImageSave = false) {
+async function shareArrivalContent(data) {
   if (arrivalShareBusy) return;
 
   arrivalShareBusy = true;
 
   const imageButton = document.getElementById("shareArrivalImageBtn");
-  const textButton = document.getElementById("shareArrivalTextBtn");
   const status = document.getElementById("arrivalShareStatus");
 
   imageButton.disabled = true;
-  textButton.disabled = true;
   status.textContent = "";
 
   try {
     await navigator.share(data);
 
-    // アプリ側から実際の投稿完了までは確認できない
-    status.textContent = forImageSave
-      ? "写真への保存を確認したら、投稿先のボタンを押してください。"
-      : "共有操作を終了しました。送信結果は共有先で確認してください。";
+    status.textContent =
+      "写真への保存を確認したら、投稿先のボタンを押してください。";
   } catch (error) {
     if (error.name === "AbortError") {
       status.textContent =
-        "共有をキャンセルしたか、共有先を利用できませんでした。";
+        "保存画面を閉じたか、保存先を利用できませんでした。";
     } else {
-      console.warn("到着報告の共有失敗:", error);
+      console.warn("画像保存画面の表示失敗:", error);
       status.textContent =
-        "共有画面を開けませんでした。Safariでもう一度お試しください。";
+        "保存画面を開けませんでした。" +
+        "共有用画像を長押しして保存してください。";
     }
   } finally {
     arrivalShareBusy = false;
     imageButton.disabled = false;
-    textButton.disabled = false;
   }
 }
 

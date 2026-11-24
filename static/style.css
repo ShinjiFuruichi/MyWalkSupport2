@@ -569,17 +569,12 @@ button:active {
   text-decoration: none;
 }
 
-#shareArrivalImageBtn,
-#shareArrivalTextBtn {
+#shareArrivalImageBtn {
   width: 100%;
   height: auto;
   padding: 12px;
   margin-top: 10px;
   font-size: 16px;
-}
-
-#shareArrivalTextBtn {
-  background: #30643d;
 }
 
 #arrivalShareStatus {
@@ -628,14 +623,36 @@ button:active {
 
 .arrival-app-buttons {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   margin: 16px 0;
 }
 
 .arrival-app-buttons button {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   height: auto;
-  padding: 14px;
+  min-height: 88px;
+  padding: 12px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: white;
+}
+
+.arrival-app-buttons svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.arrival-app-buttons span {
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.3;
 }
 
 #openArrivalFacebookBtn {
