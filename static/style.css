@@ -459,6 +459,17 @@ button:active {
   padding: 8px;
 }
 
+/* CP・現在地の選択欄 */
+#arrivalSelect {
+  min-height: 56px;
+  padding: 14px 12px;
+  font-size: 18px;
+  border: 2px solid #a9bcae;
+  border-radius: 10px;
+  background-color: #fff;
+  color: #183c25;
+}
+
 .arrival-box textarea {
   height: 240px;
   resize: vertical;
@@ -479,9 +490,27 @@ button:active {
   margin-top: 16px;
 }
 
+/* 写真選択欄 */
 #arrivalPhotoInput {
+  box-sizing: border-box;
   width: 100%;
-  font-size: 16px;
+  min-height: 56px;
+  font-size: 18px;
+  color: #333;
+}
+
+/* 「ファイルを選択」のボタン部分 */
+#arrivalPhotoInput::file-selector-button {
+  min-height: 56px;
+  padding: 14px 20px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #30643d;
+  color: white;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 #arrivalPhotoPreview {
@@ -555,4 +584,24 @@ button:active {
 
 #arrivalShareStatus {
   font-size: 14px;
+}
+
+/* 到着報告パネル内の操作を押しやすくする */
+#arrivalPanel button {
+  min-height: 56px;
+  font-size: 18px;
+  line-height: 1.4;
+  border-radius: 10px;
+}
+
+#arrivalPanel button:disabled {
+  opacity: 0.5;
+}
+
+/* 地図リンクも押しやすい大きさに */
+#arrivalMapLink {
+  box-sizing: border-box;
+  min-height: 56px;
+  padding: 16px 18px;
+  font-size: 18px;
 }
