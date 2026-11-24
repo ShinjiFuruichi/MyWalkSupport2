@@ -2826,63 +2826,9 @@ document.getElementById("openArrivalFacebookBtn").onclick =
 document.getElementById("openArrivalInstagramBtn").onclick =
   () => openArrivalApp("instagram");
 
-// LINE用：作成画像と地図URLをまとめて共有
-document.getElementById("openArrivalLineBtn").onclick = () => {
-  if (arrivalShareBusy || arrivalAppOpening) return;
-  if (!arrivalDraft) return;
-
-  if (!arrivalShareImageData) {
-    alert("先に「共有用画像を作る」を押してください。");
-    return;
-  }
-
-  const mapUrl = document.getElementById("arrivalMapLink")
-    .getAttribute("href");
-
-  if (!mapUrl) return;
-
-  try {
-    const base64 = arrivalShareImageData.split(",")[1];
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-
-    const file = new File(
-      [bytes],
-      "checkpoint-arrival.jpg",
-      { type: "image/jpeg" }
-    );
-
-    const data = {
-      files: [file],
-      text: mapUrl
-    };
-
-    if (
-      !navigator.share ||
-      !navigator.canShare ||
-      !navigator.canShare(data)
-    ) {
-      alert(
-        "この環境では画像と地図URLをまとめて共有できません。" +
-        "画像と地図リンクを別々に送ってください。"
-      );
-      return;
-    }
-
-    document.getElementById("arrivalAppStatus").textContent =
-      "共有先でLINEを選んでください。" +
-      "送信前に、画像と地図URLの両方が含まれているか確認してください。";
-
-    shareArrivalContent(data);
-  } catch (error) {
-    console.warn("LINE共有の準備失敗:", error);
-    alert("共有の準備に失敗しました。画像を作り直してください。");
-  }
-};
+// 地図URLをコピーしてLINEを開く
+document.getElementById("openArrivalLineBtn").onclick =
+  () => openArrivalApp("line");
 
 async function openArrivalApp(appKey) {
   if (arrivalAppOpening || arrivalShareBusy) return;
